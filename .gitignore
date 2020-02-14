@@ -1,0 +1,14 @@
+# Generated files
+*.egg-info/
+.idea*
+*__pycache__*
+.ipynb_checkpoints*
+*.pyc
+*.DS_Store
+*.mp4
+*.json
+output/
+saved_models/
+env_test.py
+dkitty_eval.sh
+experiments/
