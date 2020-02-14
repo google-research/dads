@@ -10,6 +10,7 @@ In case of problems, contact Archit Sharma.
 * [Setup](#setup)
 * [Usage](#usage)
 * [Citation](#citation)
+* [Disclaimer](#disclaimer)
 
 ## Setup
 
@@ -54,6 +55,9 @@ The specified experimental log directory will contain the tensorboard files, the
   year={2019}
 }
 ```
+
+## Disclaimer
+This is not an officially supported Google product.
 
 [website]: https://sites.google.com/corp/view/dads-skill 
 [paper]: https://arxiv.org/abs/1907.01657
