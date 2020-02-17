@@ -16,6 +16,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
+
 from gym import utils
 import numpy as np
 from gym.envs.mujoco import mujoco_env
@@ -30,10 +32,24 @@ def mass_center(sim):
 # pylint: disable=missing-docstring
 class HumanoidEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
-  def __init__(self, expose_all_qpos=False, model_path='humanoid.xml'):
+  def __init__(self, 
+               expose_all_qpos=False,
+               model_path='humanoid.xml',
+               task=None,
+               goal=None):
+
+    self._task = task
+    self._goal = goal
+    if self._task == "follow_goals":
+      self._goal_list = [
+          np.array([3.0, -0.5]),
+          np.array([6.0, 8.0]),
+          np.array([12.0, 12.0]),
+      ]
+      self._goal = self._goal_list[0]
+      print("Following a trajectory of goals:", self._goal_list)
+
     self._expose_all_qpos = expose_all_qpos
-    # Settings from
-    # https://github.com/openai/gym/blob/master/gym/envs/__init__.py
     xml_path = "envs/assets/"
     model_path = os.path.abspath(os.path.join(xml_path, model_path))
     mujoco_env.MujocoEnv.__init__(self, model_path, 5)
@@ -43,13 +59,43 @@ class HumanoidEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     data = self.sim.data
     if self._expose_all_qpos:
       return np.concatenate([
-          data.qpos.flat, data.qvel.flat, data.cinert.flat, data.cvel.flat,
-          data.qfrc_actuator.flat, data.cfrc_ext.flat
+          data.qpos.flat, data.qvel.flat,
+          # data.cinert.flat, data.cvel.flat,
+          # data.qfrc_actuator.flat, data.cfrc_ext.flat
       ])
     return np.concatenate([
         data.qpos.flat[2:], data.qvel.flat, data.cinert.flat, data.cvel.flat,
         data.qfrc_actuator.flat, data.cfrc_ext.flat
     ])
+
+  def compute_reward(self, ob, next_ob, action=None):
+    xposbefore = ob[:, 0]
+    yposbefore = ob[:, 1]
+    xposafter = next_ob[:, 0]
+    yposafter = next_ob[:, 1]
+
+    forward_reward = (xposafter - xposbefore) / self.dt
+    sideward_reward = (yposafter - yposbefore) / self.dt
+
+    if action is not None:
+      ctrl_cost = .5 * np.square(action).sum(axis=1)
+      survive_reward = 1.0
+    if self._task == "forward":
+      reward = forward_reward - ctrl_cost + survive_reward
+    elif self._task == "backward":
+      reward = -forward_reward - ctrl_cost + survive_reward
+    elif self._task == "left":
+      reward = sideward_reward - ctrl_cost + survive_reward
+    elif self._task == "right":
+      reward = -sideward_reward - ctrl_cost + survive_reward
+    elif self._task in ["goal", "follow_goals"]:
+      reward = -np.linalg.norm(
+          np.array([xposafter, yposafter]).T - self._goal, axis=1)
+    elif self._task in ["sparse_goal"]:
+      reward = (-np.linalg.norm(
+          np.array([xposafter, yposafter]).T - self._goal, axis=1) >
+                -0.3).astype(np.float32)
+    return reward
 
   def step(self, a):
     pos_before = mass_center(self.sim)
@@ -63,6 +109,22 @@ class HumanoidEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     quad_impact_cost = .5e-6 * np.square(data.cfrc_ext).sum()
     quad_impact_cost = min(quad_impact_cost, 10)
     reward = lin_vel_cost - quad_ctrl_cost - quad_impact_cost + alive_bonus
+
+    if self._task == "follow_goals":
+      xposafter = self.sim.data.qpos.flat[0]
+      yposafter = self.sim.data.qpos.flat[1]
+      reward = -np.linalg.norm(np.array([xposafter, yposafter]).T - self._goal)
+      # update goal
+      if np.abs(reward) < 0.5:
+        self._goal = self._goal_list[0]
+        self._goal_list = self._goal_list[1:]
+        print("Goal Updated:", self._goal)
+
+    elif self._task == "goal":
+      xposafter = self.sim.data.qpos.flat[0]
+      yposafter = self.sim.data.qpos.flat[1]
+      reward = -np.linalg.norm(np.array([xposafter, yposafter]).T - self._goal)
+
     qpos = self.sim.data.qpos
     done = bool((qpos[2] < 1.0) or (qpos[2] > 2.0))
     return self._get_obs(), reward, done, dict(
@@ -81,7 +143,13 @@ class HumanoidEnv(mujoco_env.MujocoEnv, utils.EzPickle):
             high=c,
             size=self.sim.model.nv,
         ))
+
+    if self._task == "follow_goals":
+      self._goal = self._goal_list[0]
+      self._goal_list = self._goal_list[1:]
+      print("Current goal:", self._goal)
+
     return self._get_obs()
 
   def viewer_setup(self):
-    self.viewer.cam.distance = self.model.stat.extent * 0.5
+    self.viewer.cam.distance = self.model.stat.extent * 2.0
