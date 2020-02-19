@@ -740,7 +740,7 @@ def eval_loop(eval_dir,
 
     mean_reward = 0.
     per_skill_evaluations = 1
-    predict_trajectory_steps = 10
+    predict_trajectory_steps = 0
     # trajectories_per_skill = []
     # predicted_trajectories_per_skill = []
     for eval_idx in range(per_skill_evaluations):
