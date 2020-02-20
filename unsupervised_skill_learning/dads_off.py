@@ -927,9 +927,6 @@ def eval_mppi(
      top_primitives: number of elites to choose, if using CEM (not tested).
   """
 
-  latent_action_space_size = FLAGS.num_skills
-  future_steps = 1  # ensure primitive horizon is a multiple of future_steps
-  episode_horizon = FLAGS.max_env_steps
   step_idx = 0
 
   def _smooth_primitive_sequences(primitive_sequences):
@@ -1019,7 +1016,7 @@ def eval_mppi(
       running_reward = np.zeros(num_candidate_sequences)
       for planning_idx in range(planning_horizon):
         cur_primitives = candidate_primitive_sequences[:, planning_idx, :]
-        for _ in range(primitive_horizon // future_steps):
+        for _ in range(primitive_horizon):
           predicted_next_state = dynamics.predict_state(running_cur_state,
                                                         cur_primitives)
 
@@ -1044,7 +1041,7 @@ def eval_mppi(
 
     # a loop just to check what the chosen primitive is expected to do
     # running_cur_state = np.array([process_observation(time_step.observation)])
-    # for _ in range(primitive_horizon // future_steps):
+    # for _ in range(primitive_horizon):
     #   predicted_next_state = dynamics.predict_state(
     #       running_cur_state, np.expand_dims(chosen_primitive, 0))
     #   running_cur_state = predicted_next_state
@@ -1083,7 +1080,7 @@ def main(_):
   start_time = time.time()
   tf.compat.v1.enable_resource_variables()
   logging.set_verbosity(logging.INFO)
-  global observation_omit_size, goal_coord, sample_count, iter_count
+  global observation_omit_size, goal_coord, sample_count, iter_count, episode_size_buffer, episode_return_buffer
 
   root_dir = os.path.abspath(os.path.expanduser(FLAGS.logdir))
   if not tf.gfile.Exists(root_dir):
