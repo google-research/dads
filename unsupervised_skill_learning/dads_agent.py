@@ -164,7 +164,7 @@ class DADSAgent(sac_agent.SacAgent):
     with self._graph.as_default():
       self.get_experience_placeholder()
       self.agent_train_op = self.train(self._policy_experience_ph)
-      self.summary_ops = tf.contrib.summary.all_summary_ops()
+      self.summary_ops = tf.compat.v1.summary.all_v2_summary_ops()
       return self.agent_train_op
 
   def build_skill_dynamics_graph(self):
