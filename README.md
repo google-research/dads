@@ -17,7 +17,7 @@ In case of problems, contact Archit Sharma.
 #### (1) Setup MuJoCo
 Download and setup [mujoco][mujoco] in `~/.mujoco`. Set the `LD_LIBRARY_PATH` in your `~/.bashrc`:
 ```
-LD_LIBRARY_PATH = '~/.mujoco/mjpro150/bin':$LD_LIBRARY_PATH
+LD_LIBRARY_PATH='~/.mujoco/mjpro150/bin':$LD_LIBRARY_PATH
 ```
 
 #### (2) Setup environment
@@ -35,7 +35,7 @@ Every training run will require an experimental logging directory and a configur
 
 For training, ensure `--run_train=1` is set in the configuration file. For on-policy optimization, set `--clear_buffer_every_iter=1` and ensure the replay buffer size is bigger than the number of steps collected in every iteration. For off-policy optimization (details yet to be released), set `--clear_buffer_every_iter=0`. Set the environment name (ensure the environment is listed in `get_environment()` in `dads_off.py`). To change the observation for skill-dynamics (for example to learn in x-y space), set `--reduced_observation` and correspondingly configure `process_observation()` in `dads_off.py`. The skill space can be configured to be discrete or continuous. The optimization parameters can be tweaked, and some basic values have been set in (more details in the [paper][paper]). 
 
-For evaluation, ensure `--run_eval=1` and the experimental directory points to the same directory in which the training happened. Set `--num_evals` to record videos of skill randomly sampled from the prior distribution. After that, the script will use the learned models to execute MPC to optimize for the reward. By default, the code will call `get_environment()` to load `FLAGS.environment + '_goal'`, and will go through the list of goal-coordinates in the script.
+For evaluation, ensure `--run_eval=1` and the experimental directory points to the same directory in which the training happened. Set `--num_evals` if you want to record videos of randomly sampled skills from the prior distribution. After that, the script will use the learned models to execute MPC on the latent space to optimize for the task-reward. By default, the code will call `get_environment()` to load `FLAGS.environment + '_goal'`, and will go through the list of goal-coordinates specified in the eval section of the script.
 
 We have provided the configuration files in `configs/` to reproduce results from the experiments in the [paper][paper]. Goal evaluation is currently only setup for MuJoCo Ant environement. The goal distribution can be changed in `dads_off.py` in evaluation part of the script.
 
