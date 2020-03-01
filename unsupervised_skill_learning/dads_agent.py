@@ -63,7 +63,7 @@ class DADSAgent(sac_agent.SacAgent):
     self._process_observation = observation_modify_fn
 
     if agent_graph is None:
-      self._graph = tf.get_default_graph()
+      self._graph = tf.compat.v1.get_default_graph()
     else:
       self._graph = agent_graph
 
@@ -150,7 +150,7 @@ class DADSAgent(sac_agent.SacAgent):
     self._placeholders = []
     for item in nest.flatten(self.collect_data_spec):
       self._placeholders += [
-          tf.placeholder(
+          tf.compat.v1.placeholder(
               item.dtype,
               shape=(None, 2) if len(item.shape) == 0 else
               (None, 2, item.shape[-1]),

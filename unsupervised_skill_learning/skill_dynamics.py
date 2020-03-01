@@ -52,7 +52,7 @@ class SkillDynamics:
     if graph is not None:
       self._graph = graph
     else:
-      self._graph = tf.get_default_graph()
+      self._graph = tf.compat.v1.get_default_graph()
     self._scope_name = scope_name
 
     # dynamics network properties
@@ -76,25 +76,25 @@ class SkillDynamics:
 
   def _get_distribution(self, out):
     if self._num_components > 1:
-      self.logits = tf.layers.dense(
-          out, self._num_components, name='logits', reuse=tf.AUTO_REUSE)
+      self.logits = tf.compat.v1.layers.dense(
+          out, self._num_components, name='logits', reuse=tf.compat.v1.AUTO_REUSE)
       means, scale_diags = [], []
       for component_id in range(self._num_components):
         means.append(
-            tf.layers.dense(
+            tf.compat.v1.layers.dense(
                 out,
                 self._observation_size,
                 name='mean_' + str(component_id),
-                reuse=tf.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE))
         if not self._fix_variance:
           scale_diags.append(
               tf.clip_by_value(
-                  tf.layers.dense(
+                  tf.compat.v1.layers.dense(
                       out,
                       self._observation_size,
                       activation=tf.nn.softplus,
                       name='stddev_' + str(component_id),
-                      reuse=tf.AUTO_REUSE), self._std_lower_clip,
+                      reuse=tf.compat.v1.AUTO_REUSE), self._std_lower_clip,
                   self._std_upper_clip))
         else:
           scale_diags.append(
@@ -109,16 +109,16 @@ class SkillDynamics:
               loc=self.means, scale_diag=self.scale_diags))
 
     else:
-      mean = tf.layers.dense(
-          out, self._observation_size, name='mean', reuse=tf.AUTO_REUSE)
+      mean = tf.compat.v1.layers.dense(
+          out, self._observation_size, name='mean', reuse=tf.compat.v1.AUTO_REUSE)
       if not self._fix_variance:
         stddev = tf.clip_by_value(
-            tf.layers.dense(
+            tf.compat.v1.layers.dense(
                 out,
                 self._observation_size,
                 activation=tf.nn.softplus,
                 name='stddev',
-                reuse=tf.AUTO_REUSE), self._std_lower_clip,
+                reuse=tf.compat.v1.AUTO_REUSE), self._std_lower_clip,
             self._std_upper_clip)
       else:
         stddev = tf.fill([tf.shape(out)[0], self._observation_size], 1.0)
@@ -128,35 +128,35 @@ class SkillDynamics:
   # dynamics graph with separate pipeline for skills and timesteps
   def _graph_with_separate_skill_pipe(self, timesteps, actions):
     skill_out = actions
-    with tf.variable_scope('action_pipe'):
+    with tf.compat.v1.variable_scope('action_pipe'):
       for idx, layer_size in enumerate((self._fc_layer_params[0] // 2,)):
-        skill_out = tf.layers.dense(
+        skill_out = tf.compat.v1.layers.dense(
             skill_out,
             layer_size,
             activation=tf.nn.relu,
             name='hid_' + str(idx),
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
 
     ts_out = timesteps
-    with tf.variable_scope('ts_pipe'):
+    with tf.compat.v1.variable_scope('ts_pipe'):
       for idx, layer_size in enumerate((self._fc_layer_params[0] // 2,)):
-        ts_out = tf.layers.dense(
+        ts_out = tf.compat.v1.layers.dense(
             ts_out,
             layer_size,
             activation=tf.nn.relu,
             name='hid_' + str(idx),
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
 
-    # out = tf.layers.flatten(tf.einsum('ai,aj->aij', ts_out, skill_out))
+    # out = tf.compat.v1.layers.flatten(tf.einsum('ai,aj->aij', ts_out, skill_out))
     out = tf.concat([ts_out, skill_out], axis=1)
-    with tf.variable_scope('joint'):
+    with tf.compat.v1.variable_scope('joint'):
       for idx, layer_size in enumerate(self._fc_layer_param[1:]):
-        out = tf.layers.dense(
+        out = tf.compat.v1.layers.dense(
             out,
             layer_size,
             activation=tf.nn.relu,
             name='hid_' + str(idx),
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
 
     return self._get_distribution(out)
 
@@ -164,12 +164,12 @@ class SkillDynamics:
   def _default_graph(self, timesteps, actions):
     out = tf.concat([timesteps, actions], axis=1)
     for idx, layer_size in enumerate(self._fc_layer_params):
-      out = tf.layers.dense(
+      out = tf.compat.v1.layers.dense(
           out,
           layer_size,
           activation=tf.nn.relu,
           name='hid_' + str(idx),
-          reuse=tf.AUTO_REUSE)
+          reuse=tf.compat.v1.AUTO_REUSE)
 
     return self._get_distribution(out)
 
@@ -222,19 +222,19 @@ class SkillDynamics:
 
   def make_placeholders(self):
     self._use_placeholders = True
-    with self._graph.as_default(), tf.variable_scope(self._scope_name):
-      self.timesteps_pl = tf.placeholder(
+    with self._graph.as_default(), tf.compat.v1.variable_scope(self._scope_name):
+      self.timesteps_pl = tf.compat.v1.placeholder(
           tf.float32, shape=(None, self._observation_size), name='timesteps_pl')
-      self.actions_pl = tf.placeholder(
+      self.actions_pl = tf.compat.v1.placeholder(
           tf.float32, shape=(None, self._action_size), name='actions_pl')
-      self.next_timesteps_pl = tf.placeholder(
+      self.next_timesteps_pl = tf.compat.v1.placeholder(
           tf.float32,
           shape=(None, self._observation_size),
           name='next_timesteps_pl')
       if self._normalize_observations:
-        self.is_training_pl = tf.placeholder(tf.bool, name='batch_norm_pl')
+        self.is_training_pl = tf.compat.v1.placeholder(tf.bool, name='batch_norm_pl')
       if self._reweigh_batches:
-        self.batch_weights = tf.placeholder(
+        self.batch_weights = tf.compat.v1.placeholder(
             tf.float32, shape=(None,), name='importance_sampled_weights')
 
   def set_session(self, session=None, initialize_or_restore_variables=False):
@@ -245,7 +245,7 @@ class SkillDynamics:
 
     # only initialize uninitialized variables
     if initialize_or_restore_variables:
-      if tf.gfile.Exists(self._save_prefix):
+      if tf.io.gfile.exists(self._save_prefix):
         self.restore_variables()
       with self._graph.as_default():
         var_list = tf.compat.v1.global_variables(
@@ -266,8 +266,8 @@ class SkillDynamics:
                   actions=None,
                   next_timesteps=None,
                   is_training=None):
-    with self._graph.as_default(), tf.variable_scope(
-        self._scope_name, reuse=tf.AUTO_REUSE):
+    with self._graph.as_default(), tf.compat.v1.variable_scope(
+        self._scope_name, reuse=tf.compat.v1.AUTO_REUSE):
       if self._use_placeholders:
         timesteps = self.timesteps_pl
         actions = self.actions_pl
@@ -282,12 +282,12 @@ class SkillDynamics:
         timesteps = timesteps[:, self._restrict_observation:]
 
       if self._normalize_observations:
-        timesteps = tf.layers.batch_normalization(
+        timesteps = tf.compat.v1.layers.batch_normalization(
             timesteps,
             training=is_training,
             name='input_normalization',
-            reuse=tf.AUTO_REUSE)
-        self.output_norm_layer = tf.layers.BatchNormalization(
+            reuse=tf.compat.v1.AUTO_REUSE)
+        self.output_norm_layer = tf.compat.v1.layers.BatchNormalization(
             scale=False, center=False, name='output_normalization')
         next_timesteps = self.output_norm_layer(
             next_timesteps, training=is_training)
@@ -306,20 +306,20 @@ class SkillDynamics:
 
   def increase_prob_op(self, learning_rate=3e-4, weights=None):
     with self._graph.as_default():
-      update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+      update_ops = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS)
       with tf.control_dependencies(update_ops):
         if self._reweigh_batches:
-          self.dyn_max_op = tf.train.AdamOptimizer(
+          self.dyn_max_op = tf.compat.v1.train.AdamOptimizer(
               learning_rate=learning_rate,
               name='adam_max').minimize(-tf.reduce_mean(self.log_probability *
                                                         self.batch_weights))
         elif weights is not None:
-          self.dyn_max_op = tf.train.AdamOptimizer(
+          self.dyn_max_op = tf.compat.v1.train.AdamOptimizer(
               learning_rate=learning_rate,
               name='adam_max').minimize(-tf.reduce_mean(self.log_probability *
                                                         weights))
         else:
-          self.dyn_max_op = tf.train.AdamOptimizer(
+          self.dyn_max_op = tf.compat.v1.train.AdamOptimizer(
               learning_rate=learning_rate,
               name='adam_max').minimize(-tf.reduce_mean(self.log_probability))
 
@@ -327,18 +327,18 @@ class SkillDynamics:
 
   def decrease_prob_op(self, learning_rate=3e-4, weights=None):
     with self._graph.as_default():
-      update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+      update_ops = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS)
       with tf.control_dependencies(update_ops):
         if self._reweigh_batches:
-          self.dyn_min_op = tf.train.AdamOptimizer(
+          self.dyn_min_op = tf.compat.v1.train.AdamOptimizer(
               learning_rate=learning_rate, name='adam_min').minimize(
                   tf.reduce_mean(self.log_probability * self.batch_weights))
         elif weights is not None:
-          self.dyn_min_op = tf.train.AdamOptimizer(
+          self.dyn_min_op = tf.compat.v1.train.AdamOptimizer(
               learning_rate=learning_rate, name='adam_min').minimize(
                   tf.reduce_mean(self.log_probability * weights))
         else:
-          self.dyn_min_op = tf.train.AdamOptimizer(
+          self.dyn_min_op = tf.compat.v1.train.AdamOptimizer(
               learning_rate=learning_rate,
               name='adam_min').minimize(tf.reduce_mean(self.log_probability))
         return self.dyn_min_op
@@ -349,16 +349,16 @@ class SkillDynamics:
     else:
       with self._graph.as_default():
         self._variable_list = {}
-        for var in tf.get_collection(
-            tf.GraphKeys.GLOBAL_VARIABLES, scope=self._scope_name):
+        for var in tf.compat.v1.get_collection(
+            tf.compat.v1.GraphKeys.GLOBAL_VARIABLES, scope=self._scope_name):
           self._variable_list[var.name] = var
-        self._saver = tf.train.Saver(
+        self._saver = tf.compat.v1.train.Saver(
             self._variable_list, save_relative_paths=True)
         self._save_prefix = save_prefix
 
   def save_variables(self, global_step):
-    if not tf.gfile.Exists(self._save_prefix):
-      tf.gfile.MakeDirs(self._save_prefix)
+    if not tf.io.gfile.exists(self._save_prefix):
+      tf.io.gfile.makedirs(self._save_prefix)
 
     self._saver.save(
         self._session,
@@ -367,7 +367,7 @@ class SkillDynamics:
 
   def restore_variables(self):
     self._saver.restore(self._session,
-                        tf.train.latest_checkpoint(self._save_prefix))
+                        tf.compat.v1.train.latest_checkpoint(self._save_prefix))
 
   # all functions here-on require placeholders----------------------------------
   def train(self,

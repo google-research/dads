@@ -682,7 +682,7 @@ def eval_loop(eval_dir,
               dynamics=None,
               vid_name=None,
               plot_name=None):
-  metadata = tf.gfile.Open(
+  metadata = tf.io.gfile.GFile(
       os.path.join(eval_dir, 'metadata.txt'), 'a')
   if FLAGS.num_skills == 0:
     num_evals = FLAGS.num_evals
@@ -802,12 +802,12 @@ def eval_loop(eval_dir,
   # print(all_trajectories.shape, all_predicted_trajectories.shape)
   # pkl.dump(
   #     all_trajectories,
-  #     tf.gfile.GFile(
+  #     tf.io.gfile.GFile(
   #         os.path.join(vid_dir, 'skill_dynamics_full_obs_r100_actual_trajectories.pkl'),
   #         'wb'))
   # pkl.dump(
   #     all_predicted_trajectories,
-  #     tf.gfile.GFile(
+  #     tf.io.gfile.GFile(
   #         os.path.join(vid_dir, 'skill_dynamics_full_obs_r100_predicted_trajectories.pkl'),
   #         'wb'))
   if plot_name is not None:
@@ -818,7 +818,7 @@ def eval_loop(eval_dir,
     # plt.title('Trajectories in Continuous Skill Space')
     plt.savefig(buf, dpi=600, bbox_inches='tight')
     buf.seek(0)
-    image = tf.gfile.Open(os.path.join(eval_dir, full_image_name), 'w')
+    image = tf.io.gfile.GFile(os.path.join(eval_dir, full_image_name), 'w')
     image.write(buf.read(-1))
 
     # clear before next plot
@@ -1079,19 +1079,20 @@ def main(_):
   # setting up
   start_time = time.time()
   tf.compat.v1.enable_resource_variables()
+  tf.compat.v1.disable_eager_execution()
   logging.set_verbosity(logging.INFO)
   global observation_omit_size, goal_coord, sample_count, iter_count, episode_size_buffer, episode_return_buffer
 
   root_dir = os.path.abspath(os.path.expanduser(FLAGS.logdir))
-  if not tf.gfile.Exists(root_dir):
-    tf.gfile.MakeDirs(root_dir)
+  if not tf.io.gfile.exists(root_dir):
+    tf.io.gfile.makedirs(root_dir)
   log_dir = os.path.join(root_dir, FLAGS.environment)
   
-  if not tf.gfile.Exists(log_dir):
-    tf.gfile.MakeDirs(log_dir)
+  if not tf.io.gfile.exists(log_dir):
+    tf.io.gfile.makedirs(log_dir)
   save_dir = os.path.join(log_dir, 'models')
-  if not tf.gfile.Exists(save_dir):
-    tf.gfile.MakeDirs(save_dir)
+  if not tf.io.gfile.exists(save_dir):
+    tf.io.gfile.makedirs(save_dir)
 
   print('directory for recording experiment data:', log_dir)
 
@@ -1479,35 +1480,35 @@ def main(_):
 
           if len(episode_size_buffer) > 1:
             train_writer.add_summary(
-                tf.Summary(value=[
-                    tf.Summary.Value(
+                tf.compat.v1.Summary(value=[
+                    tf.compat.v1.Summary.Value(
                         tag='episode_size',
                         simple_value=np.mean(episode_size_buffer[:-1]))
                 ]), sample_count)
           if len(episode_return_buffer) > 1:
             train_writer.add_summary(
-                tf.Summary(value=[
-                    tf.Summary.Value(
+                tf.compat.v1.Summary(value=[
+                    tf.compat.v1.Summary.Value(
                         tag='episode_return',
                         simple_value=np.mean(episode_return_buffer[:-1]))
                 ]), sample_count)
           train_writer.add_summary(
-              tf.Summary(value=[
-                  tf.Summary.Value(
+              tf.compat.v1.Summary(value=[
+                  tf.compat.v1.Summary.Value(
                       tag='dads/reward',
                       simple_value=np.mean(
                           np.concatenate(running_dads_reward)))
               ]), sample_count)
 
           train_writer.add_summary(
-              tf.Summary(value=[
-                  tf.Summary.Value(
+              tf.compat.v1.Summary(value=[
+                  tf.compat.v1.Summary.Value(
                       tag='dads/logp',
                       simple_value=np.mean(np.concatenate(running_logp)))
               ]), sample_count)
           train_writer.add_summary(
-              tf.Summary(value=[
-                  tf.Summary.Value(
+              tf.compat.v1.Summary(value=[
+                  tf.compat.v1.Summary.Value(
                       tag='dads/logp_altz',
                       simple_value=np.mean(np.concatenate(running_logp_altz)))
               ]), sample_count)
@@ -1521,7 +1522,7 @@ def main(_):
           # within train loop evaluation
           if FLAGS.record_freq is not None and iter_count % FLAGS.record_freq == 0:
             cur_vid_dir = os.path.join(log_dir, 'videos', str(iter_count))
-            tf.gfile.MakeDirs(cur_vid_dir)
+            tf.io.gfile.makedirs(cur_vid_dir)
             eval_loop(
                 cur_vid_dir,
                 eval_policy,
@@ -1540,8 +1541,8 @@ def main(_):
       # final evaluation, if any
       if FLAGS.run_eval:
         vid_dir = os.path.join(log_dir, 'videos', 'final_eval')
-        if not tf.gfile.Exists(vid_dir):
-          tf.gfile.MakeDirs(vid_dir)
+        if not tf.io.gfile.exists(vid_dir):
+          tf.io.gfile.makedirs(vid_dir)
         vid_name = FLAGS.vid_name
 
         # generic skill evaluation
@@ -1565,8 +1566,8 @@ def main(_):
         ]
 
         eval_dir = os.path.join(eval_dir, 'mpc_eval')
-        if not tf.gfile.Exists(eval_dir):
-          tf.gfile.MakeDirs(eval_dir)
+        if not tf.io.gfile.exists(eval_dir):
+          tf.io.gfile.makedirs(eval_dir)
         save_label = 'goal_'
         if 'discrete' in FLAGS.skill_type:
           planning_fn = eval_planning
@@ -1671,7 +1672,7 @@ def main(_):
         buf = io.BytesIO()
         plt.savefig(buf, dpi=600, bbox_inches='tight')
         buf.seek(0)
-        image = tf.gfile.Open(os.path.join(eval_dir, save_label + '.png'), 'w')
+        image = tf.io.gfile.GFile(os.path.join(eval_dir, save_label + '.png'), 'w')
         image.write(buf.read(-1))
         plt.clf()
 
@@ -1691,7 +1692,7 @@ def main(_):
         #   buf = io.BytesIO()
         #   plt.savefig(buf, dpi=200, bbox_inches='tight')
         #   buf.seek(0)
-        #   image = tf.gfile.Open(
+        #   image = tf.io.gfile.GFile(
         #       os.path.join(eval_dir,
         #                    save_label + '_' + '%04d' % (iter_idx) + '.png'),
         #       'w')
