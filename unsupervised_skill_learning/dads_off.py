@@ -303,8 +303,9 @@ def get_environment(env_name='point_mass'):
         randomize_initial_position=bool(FLAGS.randomized_initial_distribution),
         randomize_initial_rotation=bool(FLAGS.randomized_initial_distribution))
   else:
-    # note this is already wrapped, no need to wrap again
-    env = suite_mujoco.load(env_name)
+    # note this is already wrapped.
+    # unwrap here so that we can later apply SkillWrapper, then reapply wrap_env
+    env = suite_mujoco.load(env_name).unwrapped
   return env
 
 def hide_coords(time_step):
