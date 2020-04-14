@@ -76,8 +76,15 @@ flags.DEFINE_string('logdir', '~/tmp/dads', 'Directory for saving experiment dat
 flags.DEFINE_string('environment', 'point_mass', 'Name of the environment')
 flags.DEFINE_integer('max_env_steps', 200,
                      'Maximum number of steps in one episode')
-flags.DEFINE_integer('reduced_observation', 0,
-                     'Predict dynamics in a reduced observation space')
+flags.DEFINE_integer(
+    'reduced_observation', 0,
+    'Input and output only the first n elements of observations s, s_ in dynamics model Q(s_|s,a)'
+)
+flags.DEFINE_integer(
+    'observation_omission_size', 2,
+    'Remove first n elements of input observation s in both Q(s_|s,a) and π(a|s)'
+    ## does not alter model output; takes effect *after* reduced_observation (above)
+)
 flags.DEFINE_integer(
     'min_steps_before_resample', 50,
     'Minimum number of steps to execute before resampling skill')
@@ -109,8 +116,10 @@ flags.DEFINE_integer('num_epochs', 500, 'Number of training epochs')
 
 # skill latent space
 flags.DEFINE_integer('num_skills', 2, 'Number of skills to learn')
-flags.DEFINE_string('skill_type', 'cont_uniform',
-                    'Type of skill and the prior over it')
+flags.DEFINE_enum(
+    'skill_type', 'cont_uniform',
+    ['discrete_uniform', 'cont_uniform', 'gaussian', 'multivariate_bernoulli'],
+    'Type of skill and the prior over it')
 # network size hyperparameter
 flags.DEFINE_integer(
     'hidden_layer_size', 512,
@@ -119,7 +128,7 @@ flags.DEFINE_integer(
 # reward structure
 flags.DEFINE_integer(
     'random_skills', 0,
-    'Number of skills to sample randomly for approximating mutual information')
+    'Number of skills to sample randomly for approximating mutual information (L in Eq. 9 of paper)')
 
 # optimization hyperparameters
 flags.DEFINE_integer('replay_buffer_capacity', int(1e6),
@@ -134,24 +143,27 @@ flags.DEFINE_integer(
 flags.DEFINE_integer('collect_steps', 200, 'Steps collected per agent update')
 
 # relabelling
-flags.DEFINE_string('agent_relabel_type', None,
-                    'Type of skill relabelling used for agent')
+flags.DEFINE_enum('agent_relabel_type', None, [
+    'importance_sampling', 'normalized_importance_sampling', 'policy', 'dynamics_posterior'
+    ], 'Type of skill relabelling used for agent')
 flags.DEFINE_integer(
     'train_skill_dynamics_on_policy', 0,
     'Train skill-dynamics on policy data, while agent train off-policy')
-flags.DEFINE_string('skill_dynamics_relabel_type', None,
-                    'Type of skill relabelling used for skill-dynamics')
+flags.DEFINE_enum('skill_dynamics_relabel_type', None, [
+    'importance_sampling', 'normalized_importance_sampling', 'policy', 'dynamics_posterior'
+    ], 'Type of skill relabelling used for skill-dynamics')
 flags.DEFINE_integer(
     'num_samples_for_relabelling', 100,
     'Number of samples from prior for relabelling the current skill when using policy relabelling'
 )
 flags.DEFINE_float(
     'is_clip_eps', 0.,
-    'PPO style clipping epsilon to constrain importance sampling weights to (1-eps, 1+eps)'
+    'PPO style clipping to constrain importance sampling weights to [1/eps, eps] (active if set > 1)'
+    ## note: not [1-eps, 1+eps] as in PPO paper
 )
 flags.DEFINE_float(
     'action_clipping', 1.,
-    'Clip actions to (-eps, eps) per dimension to avoid difficulties with tanh')
+    'Clip actions to [-eps, eps] per dimension to avoid difficulties with tanh (active if set < 1)')
 flags.DEFINE_integer('debug_skill_relabelling', 0,
                      'analysis of skill relabelling')
 
@@ -176,8 +188,8 @@ flags.DEFINE_string(
     'Can use the OUNoisePolicy to collect experience for better exploration')
 
 # skill-dynamics hyperparameters
-flags.DEFINE_string(
-    'graph_type', 'default',
+flags.DEFINE_enum(
+    'graph_type', 'default', ['default', 'separate'],
     'process skill input separately for more representational power')
 flags.DEFINE_integer('num_components', 4,
                      'Number of components for Mixture of Gaussians')
@@ -197,7 +209,6 @@ flags.DEFINE_float('root_noise_ratio', 0.002, 'Noise ratio for root position')
 flags.DEFINE_float('scale_root_position', 1, 'Multiply the root coordinates the magnify the change')
 flags.DEFINE_integer('run_on_hardware', 0, 'Flag for hardware runs')
 flags.DEFINE_float('randomize_hfield', 0.0, 'Randomize terrain for better DKitty transfer')
-flags.DEFINE_integer('observation_omission_size', 2, 'Dimensions to be omitted from policy input')
 
 # Manipulation Environments
 flags.DEFINE_integer('randomized_initial_distribution', 1, 'Fix the initial distribution or not')
@@ -210,7 +221,8 @@ flags.DEFINE_integer('primitive_horizon', 1, 'Horizon for every primitive')
 flags.DEFINE_integer('num_candidate_sequences', 50, 'Number of candidates sequence sampled from the proposal distribution')
 flags.DEFINE_integer('refine_steps', 10, 'Number of optimization steps')
 flags.DEFINE_float('mppi_gamma', 10.0, 'MPPI weighting hyperparameter')
-flags.DEFINE_string('prior_type', 'normal', 'Uniform or Gaussian prior for candidate skill(s)')
+flags.DEFINE_enum('prior_type', 'normal', ['normal', 'uniform'],
+                  'Uniform (CEM style) or Gaussian (MPPI) prior for candidate skill(s)')
 flags.DEFINE_float('smoothing_beta', 0.9, 'Smooth candidate skill sequences used')
 flags.DEFINE_integer('top_primitives', 5, 'Optimization parameter when using uniform prior (CEM style)')
 
