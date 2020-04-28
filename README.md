@@ -1,7 +1,7 @@
 # Dynamics-Aware Discovery of Skills (DADS)
 This repository is the open-source implementation of Dynamics-Aware Unsupervised Discovery of Skills ([project page][website], [arXiv][paper]). We propose an skill-discovery method which can learn skills for different agents without any rewards, while simultaneously learning dynamics model for the skills which can be leveraged for model-based control on the downstream task. This work was published in International Conference of Learning Representations ([ICLR][iclr]), 2020.
 
-We have also included an improved off-policy version of DADS, coined off-DADS. The details have been released in [Emergent Real-World Robotic Skills via Unsupervised Off-Policy Reinforcement Learning](rss_arxiv).
+We have also included an improved off-policy version of DADS, coined off-DADS. The details have been released in [Emergent Real-World Robotic Skills via Unsupervised Off-Policy Reinforcement Learning][rss_arxiv].
 
 In case of problems, contact Archit Sharma.
 
@@ -56,7 +56,7 @@ To cite [Dynamics-Aware Unsupervised Discovery of Skills](paper):
   year={2019}
 }
 ```
-To cite off-DADS and [Emergent Real-World Robotic Skills via Unsupervised Off-Policy Reinforcement Learning](rss_arxiv):
+To cite off-DADS and [Emergent Real-World Robotic Skills via Unsupervised Off-Policy Reinforcement Learning][rss_arxiv]:
 ```
 @article{sharma2020emergent,
     title={Emergent Real-World Robotic Skills via Unsupervised Off-Policy Reinforcement Learning},
