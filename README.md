@@ -1,7 +1,7 @@
 # Dynamics-Aware Discovery of Skills (DADS)
 This repository is the open-source implementation of Dynamics-Aware Unsupervised Discovery of Skills ([project page][website], [arXiv][paper]). We propose an skill-discovery method which can learn skills for different agents without any rewards, while simultaneously learning dynamics model for the skills which can be leveraged for model-based control on the downstream task. This work was published in International Conference of Learning Representations ([ICLR][iclr]), 2020.
 
-We have also included an improved off-policy version of DADS, coined Off-DADS. The details will be released in the paper soon.
+We have also included an improved off-policy version of DADS, coined off-DADS. The details have been released in [Emergent Real-World Robotic Skills via Unsupervised Off-Policy Reinforcement Learning](rss_arxiv).
 
 In case of problems, contact Archit Sharma.
 
@@ -47,6 +47,7 @@ python unsupervised_skill_learning/dads_off.py --logdir=<path_for_experiment_log
 The specified experimental log directory will contain the tensorboard files, the saved checkpoints and the skill-evaluation videos.
 
 ## Citation
+To cite [Dynamics-Aware Unsupervised Discovery of Skills](paper):
 ```
 @article{sharma2019dynamics,
   title={Dynamics-aware unsupervised discovery of skills},
@@ -55,7 +56,15 @@ The specified experimental log directory will contain the tensorboard files, the
   year={2019}
 }
 ```
-
+To cite off-DADS and [Emergent Real-World Robotic Skills via Unsupervised Off-Policy Reinforcement Learning](rss_arxiv):
+```
+@article{sharma2020emergent,
+    title={Emergent Real-World Robotic Skills via Unsupervised Off-Policy Reinforcement Learning},
+    author={Sharma, Archit and Ahn, Michael and Levine, Sergey and Kumar, Vikash and Hausman, Karol and Gu, Shixiang},
+    journal={arXiv preprint arXiv:2004.12974},
+    year={2020}
+}
+```
 ## Disclaimer
 This is not an officially supported Google product.
 
@@ -64,3 +73,4 @@ This is not an officially supported Google product.
 [iclr]: https://openreview.net/forum?id=HJgLZR4KvH
 [mujoco]: http://www.mujoco.org/
 [conda]: https://docs.conda.io/en/latest/miniconda.html
+[rss_arxiv]: https://arxiv.org/abs/2004.12974
