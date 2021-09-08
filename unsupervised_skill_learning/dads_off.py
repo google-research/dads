@@ -1531,6 +1531,7 @@ def main(_):
                 plot_name='traj_plot')
 
           iter_count += 1
+          print(f'iter count is: {iter_count}')
 
         py_env.close()
 
