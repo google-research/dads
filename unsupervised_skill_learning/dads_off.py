@@ -63,6 +63,8 @@ from envs import dclaw
 from envs import dkitty_redesign
 from envs import hand_block
 
+from envs import bipedal_walker
+
 from lib import py_tf_policy
 from lib import py_uniform_replay_buffer
 
@@ -290,6 +292,8 @@ def get_environment(env_name='point_mass'):
         vertical_wrist_constraint=FLAGS.vertical_wrist_constraint,
         randomize_initial_position=bool(FLAGS.randomized_initial_distribution),
         randomize_initial_rotation=bool(FLAGS.randomized_initial_distribution))
+  elif env_name == 'bipedal_walker':
+    env = bipedal_walker.BipedalWalker()
   else:
     # note this is already wrapped, no need to wrap again
     env = suite_mujoco.load(env_name)
